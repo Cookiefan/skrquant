@@ -6,14 +6,8 @@ from utils import HS300Data, code300
 from tqdm import tqdm
 from strategy.SkrStrategy import SkrStrategy
 
-
-
-
-
-
 class CrossLineStrategy(SkrStrategy):
     params = (
-        ('message_order', True),
         ('ranker', 0.2),
         ('global_period', 100),
         ('short_period', 5),
