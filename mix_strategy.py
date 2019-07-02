@@ -4,9 +4,14 @@ import pandas as pds
 import backtrader as bt
 from utils import HS300Data, code300
 from tqdm import tqdm
+from strategy.SkrStrategy import SkrStrategy
 
 
-class CrossLineStrategy(bt.Strategy):
+
+
+
+
+class CrossLineStrategy(SkrStrategy):
     params = (
         ('message_order', True),
         ('ranker', 0.2),
@@ -15,10 +20,6 @@ class CrossLineStrategy(bt.Strategy):
         ('long_period', 60),
         ('atr_period', 20),
     )
-
-    def log(self, txt, dt=None):
-        dt = dt or self.datas[0].datetime.date(0)
-        print('%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self):
         self.t = 0
@@ -33,39 +34,6 @@ class CrossLineStrategy(bt.Strategy):
             self.inds[s]["long_ma"] = bt.indicators.SimpleMovingAverage(s.close, period=self.p.long_period)
             self.inds[s]["cross"] = self.inds[s]["short_ma"] - self.inds[s]["long_ma"]
             self.inds[s]["atr20"] = bt.indicators.ATR(s, period=self.p.atr_period)
-
-    def notify_order(self, order):
-        if order.status in [order.Submitted, order.Accepted]:
-            if order.isbuy():
-                if order.data.low[1] / order.data.close[0] > 1.0950:
-                    self.log('BUYING LIMIT!')
-                    self.broker.cancel(order)
-            else:
-                if order.data.high[1] / order.data.close[0] < 0.910:
-                    self.log('SELLING LIMIT!')
-                    self.broker.cancel(order)
-
-        if not self.p.message_order:
-            return
-        if order.status in [order.Completed]:
-            if order.isbuy():
-                self.log(
-                    'BUY EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                    (order.executed.price,
-                     order.executed.value,
-                     order.executed.comm))
-
-                self.buyprice = order.executed.price
-                self.buycomm = order.executed.comm
-            else:
-                self.log('SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                         (order.executed.price,
-                          order.executed.value,
-                          order.executed.comm))
-            self.bar_executed = len(self)
-        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-            self.log('Order Canceled/Margin/Rejected')
-        self.order = None
 
     def prenext(self):
         self.next()
