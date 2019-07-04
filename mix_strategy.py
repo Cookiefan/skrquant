@@ -51,8 +51,8 @@ class CrossLineStrategy(SkrStrategy):
             if self.getposition(s).size:
                 self.close(s)
 
-        if self.hs300.close < self.hs300_ma:
-            return
+        # if self.hs300.close < self.hs300_ma:
+        #     return
         for i, s in enumerate(self.rankings[:int(num_stocks * self.p.ranker)]):
             cash = self.broker.get_cash()
             value = self.broker.get_value()
@@ -64,8 +64,8 @@ class CrossLineStrategy(SkrStrategy):
 
     def rebalance_positions(self):
         num_stocks = len(self.rankings)
-        if self.hs300.close < self.hs300_ma:
-            return
+        # if self.hs300.close < self.hs300_ma:
+        #     return
         for i, s in enumerate(self.rankings[:int(num_stocks * self.p.ranker)]):
             cash = self.broker.get_cash()
             value = self.broker.get_value()
