@@ -1,5 +1,3 @@
-import datetime
-import tushare
 import pandas as pds
 import backtrader as bt
 from utils import HS300Data, code300
