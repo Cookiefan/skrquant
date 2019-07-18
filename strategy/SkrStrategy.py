@@ -16,29 +16,40 @@ class SkrStrategy(bt.Strategy):
                 if order.data.high[0] / order.data.low[0] > 1.0950:
                     self.broker.cancel(order)
                     if self.p.order_print:
+                        if not self.p.order_print:
+                            return
                         self.log('BUYING LIMIT!')
             else:
                 if order.data.low[0] / order.data.high[0] < 0.910:
                     self.broker.cancel(order)
                     if self.p.order_print:
+                        if not self.p.order_print:
+                            return
                         self.log('SELLING LIMIT!')
 
-        if not self.p.order_print:
-            return
         if order.status == order.Completed:
             if order.isbuy():
+                if not self.p.order_print:
+                    return
                 self.log(
-                    'BUY EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                    (order.executed.price,
+                    'BUY %s EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
+                    (order.data._name,
+                     order.executed.price,
                      order.executed.value,
                      order.executed.comm))
             else:
-                self.log('SELL EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
-                         (order.executed.price,
+                if not self.p.order_print:
+                    return
+                self.log('SELL %s EXECUTED, Price: %.2f, Cost: %.2f, Comm %.2f' %
+                         (order.data._name,
+                          order.executed.price,
                           order.executed.value,
                           order.executed.comm))
         elif order.status in [order.Canceled, order.Margin, order.Rejected]:
+            if not self.p.order_print:
+                return
             self.log('Order Canceled/Margin/Rejected')
+        order = None
         
     def prenext(self):
         # Important! Call next() even data is not available
