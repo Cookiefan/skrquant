@@ -2,7 +2,7 @@ import backtrader as bt
 from indicators.WaveIndicator import WaveIndicator
 import pandas as pds
 from strategy.SkrStrategy import SkrStrategy
-from utils import HS300Data, code300
+from datamaker import code300
 
 
 class WaveStrategy(SkrStrategy):
