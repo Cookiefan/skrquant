@@ -37,35 +37,35 @@ class CrossLineStrategy(SkrStrategy):
         if self.p.start!=None and self.data0.datetime.date(0) > self.p.end:
             return
 
-        li=[]
-        for s in self.stocks:
-            li.append(self.inds[s]['cross'][0])
-        self.log(li)
         if self.t % 5 == 0:
             self.rebalance_portfolio()
-        if self.t % 10 == 0:
-            self.rebalance_positions()
+        # if self.t % 10 == 0:
+        #     self.rebalance_positions()
         self.t += 1
 
     def rebalance_portfolio(self):
         self.rankings = self.stocks[:]
         self.rankings.sort(key=lambda s: self.inds[s]["cross"][0])
-        self.log([s._name for s in self.rankings])
+        # self.log([s._name for s in self.rankings])
 
         for s in self.rankings:
             if self.getposition(s).size and self.inds[s]["cross"][0] < 0:
                 self.close(s)
-
         if self.hs300_ma[0] < 0:
             return
+
+        cash = self.broker.get_cash()
+        value = self.broker.get_value()
         for s in self.rankings:
-            cash = self.broker.get_cash()
-            value = self.broker.get_value()
-            if cash <= 0:
-                break
-            if self.getposition(s).size == 0 and self.inds[s]["cross"][0] >= 0:
-                size = value * 0.01 / self.inds[s]["atr20"][0]
-                self.buy(s, size=size)
+            size = value * 0.01 / self.inds[s]["atr20"][0]
+            size = size//100 * 100
+            if self.inds[s]["cross"][0] < 0 or self.getposition(s).size > 0:
+                continue
+            if size * s.close[0] > cash:
+                continue
+            print(s._name, size * s.close[0], cash)
+            cash -= size * s.close[0]
+            self.buy(s, size=size)
 
     def rebalance_positions(self):
         if self.hs300_ma[0] < 0:
@@ -73,11 +73,11 @@ class CrossLineStrategy(SkrStrategy):
         for s in self.rankings:
             cash = self.broker.get_cash()
             value = self.broker.get_value()
-            if cash <= 0:
-                break
-            if self.inds[s]["cross"][0] >= 0:
-                size = value * 0.01 / self.inds[s]["atr20"][0]
-                self.order_target_size(s, size)
+            size = value * 0.01 / self.inds[s]["atr20"][0]
+            size = size//100 * 100
+            if self.inds[s]["cross"][0] < 0 or size * s.close[0] > cash or self.getposition(s).size > 0:
+                continue
+            self.order_target_size(s, size)
 
 
 if __name__ == '__main__':
@@ -89,11 +89,13 @@ if __name__ == '__main__':
                       parse_dates=True,
                       index_col=0)
     cerebro.adddata(bt.feeds.PandasData(dataname=hs, plot=True, name='HS300'))
+    # code_cement = ['600425','600801','000935','600668']
     for ticker in code_cement:
         df = pds.read_csv(f"DATA/Cement/{ticker}.csv", parse_dates=True, index_col=0)
         cerebro.adddata(bt.feeds.PandasData(dataname=df, plot=False, name=ticker))
+    cerebro.broker.setcash(1000000.0)
+    cerebro.broker.setcommission(commission=0.0008)
     cerebro.addobserver(bt.observers.Broker)
-    cerebro.addobserver(bt.observers.Trades)
     cerebro.addobserver(bt.observers.BuySell)
     cerebro.addstrategy(CrossLineStrategy, start=start, end=end)
     cerebro.addanalyzer(bt.analyzers.SharpeRatio, riskfreerate=0.0)
